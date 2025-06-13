@@ -9,6 +9,10 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+  
+  performance-test:
+    needs: build_and_test
+    runs-on: ubuntu-latest
 
     services:
       postgres:
@@ -44,5 +48,49 @@ jobs:
           DB_USERNAME: postgres
           DB_PASSWORD: password
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-        run: mvn test 
+        run: mvn test
+
+      - name: Start Application in Background
+        working-directory: ./focusflowbackend
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/focusflow
+          DB_USERNAME: postgres
+          DB_PASSWORD: password
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+        run: |           
+          echo "Starting Spring Boot application..."
+          setsid mvn spring-boot:run > app.log 2>&1 &
+          echo "Application started in background. PID: $!"
+
+      - name: Wait for Application Startup
+        working-directory: ./focusflowbackend
+        timeout-minutes: 5
+        run: |
+          echo "Waiting for application to start on port 8080..."
+          # Use a loop to check a known endpoint until it responds or timeout
+          for i in $(seq 1 60); do
+            # Use curl to hit a basic endpoint, discard output
+            curl -s http://localhost:8080/api/tasks > /dev/null
+            if [ $? -eq 0 ]; then
+              echo "Application is up!"
+              exit 0
+            fi
+            echo "Attempt $i: Waiting..."
+            sleep 1
+          done
+          echo "Application failed to start within timeout."
+          # Print app logs for debugging
+          echo "--- Application Logs ---"
+          cat app.log
+          echo "----------------------"
+          exit 1
+
+      - name: Run Gatling constant load test
+        working-directory: ./focusflowbackend
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/focusflow
+          DB_USERNAME: postgres
+          DB_PASSWORD: password
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+        run: mvn gatling:test -PconstantLoad-simulation
 
