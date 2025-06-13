@@ -88,31 +88,10 @@ jobs:
           DB_USERNAME: postgres
           DB_PASSWORD: password
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-          SERVER_PORT: 8080
         run: |
           echo "Starting Spring Boot application..."
           setsid mvn spring-boot:run > app.log 2>&1 &
-          echo "Application started in background. PID: $!"
-
-      - name: Wait for Application Startup
-        working-directory: ./focusflowbackend
-        timeout-minutes: 5
-        run: |
-          echo "Waiting for application to start on port 8080..."
-          for i in $(seq 1 60); do
-            curl -s http://localhost:8080/api/tasks > /dev/null
-            if [ $? -eq 0 ]; then
-              echo "Application is up!"
-              exit 0
-            fi
-            echo "Attempt $i: Waiting..."
-            sleep 1
-          done
-          echo "Application failed to start within timeout."
-          echo "--- Application Logs ---"
-          cat app.log
-          echo "----------------------"
-          exit 1      
+          echo "Application started in background. PID: $!"     
       
       - name: Run Gatling constant load test
         working-directory: ./focusflowbackend
