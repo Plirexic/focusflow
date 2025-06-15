@@ -1,0 +1,10 @@
+# Exercise 11.3: UX Factor Analysis for FocusFlow
+
+| UX Factor               | Importance to Target Users                                            | How FocusFlow Supports This Factor                                                                 | Risks if Ignored                                                                           |
+|-------------------------|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| **Ease of use**         | Users need to get started immediately without a steep learning curve.  | Simple login flow, clean dashboard with clear “Create Task” button and straightforward navigation. | Frustration, high drop-off rate, increased support requests.                              |
+| **Efficiency**          | Users want to manage and assign tasks with minimal effort.             | One-click task creation, “Assign to me” default, quick dropdown to pick other users or teams.      | Wasted time, reduced productivity, reluctance to adopt the tool.                          |
+| **Helpfulness**         | New or infrequent users need guidance to discover all features.        | Inline placeholder text, context-sensitive tooltips on forms, an onboarding walkthrough on first login. | Hidden features, user confusion, under-utilization of key capabilities.                   |
+| **Social Influences**   | Teams require transparency and shared awareness of work.               | Assign-to-team functionality, a dedicated Team page listing all team members and their tasks, notifications for team assignments. | Poor collaboration, tasks slipping through the cracks, lack of accountability.            |
+| **Trust/Credibility**   | Users must feel their data and assignments are secure and reliable.    | Secure login over HTTPS, clear privacy policy link on the login page, real-time sync of assignments. | Security concerns, loss of sensitive information, erosion of user confidence.            |
+
