@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +38,14 @@ public class UserService {
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            return passwordEncoder.matches(password, user.getPassword());
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                user.setLastLogin(LocalDateTime.now()); // Update last login time
+                userRepository.save(user);
+                return true;
+            } else {
+                return false;
+            }
         }
-
         return false;
     }
 

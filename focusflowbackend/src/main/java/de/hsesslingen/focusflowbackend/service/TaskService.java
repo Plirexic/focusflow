@@ -64,6 +64,7 @@ public class TaskService {
 
         // Task Entity Creation
         Task task = new Task();
+        task.setCreator(creator);
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setLongDescription(request.getLongDescription());
@@ -97,6 +98,7 @@ public class TaskService {
         return user2.getTeams().stream().anyMatch(user1Teams::contains);
     }
 
+    // Method: Update an existing task with new details
     public void updateTask(Task existing, TaskUpdateRequestDTO dto) {
         if (dto.getTitle() != null) {
             existing.setTitle(dto.getTitle());
@@ -131,6 +133,7 @@ public class TaskService {
         taskRepository.save(existing);
     }
 
+    // Method: Delete a task by its ID
     @Transactional
     public void deleteTask(Long taskId) {
         if (!taskRepository.existsById(taskId)) {

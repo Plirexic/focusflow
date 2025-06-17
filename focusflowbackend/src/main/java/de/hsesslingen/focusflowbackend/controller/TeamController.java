@@ -4,6 +4,7 @@ import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.service.TeamService;
 import de.hsesslingen.focusflowbackend.dto.TeamCreationRequestDTO;
 import de.hsesslingen.focusflowbackend.dto.TeamMemberRequestDTO;
+import de.hsesslingen.focusflowbackend.dto.TeamUpdateRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/teams")
@@ -70,6 +72,13 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamsForUser(userId));
     }
 
+    // GET: Get all members of a team
+    @GetMapping("/members")
+    public ResponseEntity<List<Long>> getTeamMembers(@RequestParam Long teamId) {
+        return ResponseEntity.ok(teamService.getTeamMembers(teamId));
+    }
+
+    // POST: Add members to a team
     @PostMapping("/{id}/members")
     public ResponseEntity<?> addMembers(
             @PathVariable("id") Long teamId,
@@ -83,6 +92,20 @@ public class TeamController {
         ));
     }
 
+    // Edit the Team Name and Description
+    @PutMapping("/{id}")
+    public ResponseEntity<Team> updateTeam(
+            @PathVariable Long id,
+            @RequestBody TeamUpdateRequestDTO request) {
+        try {
+            Team updatedTeam = teamService.updateTeam(id, request.getName(), request.getDescription());
+            return ResponseEntity.ok(updatedTeam);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // DELETE: Delete a team by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(@PathVariable Long id) {
     try {

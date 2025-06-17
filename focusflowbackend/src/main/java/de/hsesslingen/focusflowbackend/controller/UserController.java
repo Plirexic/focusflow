@@ -1,5 +1,6 @@
 package de.hsesslingen.focusflowbackend.controller;
 
+import de.hsesslingen.focusflowbackend.dto.AuthResponseDTO;
 import de.hsesslingen.focusflowbackend.dto.UserRegistrationRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import de.hsesslingen.focusflowbackend.service.UserService;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController
@@ -28,7 +30,6 @@ public class UserController {
     private final TeamRepository teamRepository;
     private final UserService userService;
 
-    // GET: Get user by ID
     @GetMapping()
     public ResponseEntity<User> getUserById(@RequestParam Long id) {
         Optional<User> user = userRepository.findById(id);
@@ -36,24 +37,27 @@ public class UserController {
                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // POST: Register a new user with valid credentials
+    @GetMapping("/email")
+    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.map(ResponseEntity::ok)
+                   .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequestDTO registrationRequest) {
-        // Validate password confirmation
+    public ResponseEntity<AuthResponseDTO> registerUser(@RequestBody UserRegistrationRequestDTO registrationRequest) {
         if (registrationRequest.getPasswordConfirm() == null ||
             !registrationRequest.getPassword().equals(registrationRequest.getPasswordConfirm())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Password confirmation does not match");
+                    .body(new AuthResponseDTO(null, null, null, null, null, "Password confirmation does not match"));
         }
 
-        // Check if email already exists
         if (userRepository.findByEmail(registrationRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT) 
-                    .body("Email already registered");
+                    .body(new AuthResponseDTO(null, null, null, null, null, "Email already registered"));
         }
 
         try {
-            // Create a new User entity from the DTO
             User newUser = new User();
             newUser.setEmail(registrationRequest.getEmail());
             newUser.setFirstName(registrationRequest.getFirstName());
@@ -61,31 +65,46 @@ public class UserController {
             newUser.setPassword(registrationRequest.getPassword());
             newUser.setRole("USER");
 
-            userService.registerUser(newUser);
+            User registeredUser = userService.registerUser(newUser);
 
-            // Successful registration
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", "/login")
-                    .build();
+            return ResponseEntity.ok(new AuthResponseDTO(
+                registeredUser.getId(),
+                registeredUser.getEmail(),
+                registeredUser.getFirstName(),
+                registeredUser.getLastName(),
+                registeredUser.getRole(),
+                "Registrierung erfolgreich!"
+            ));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
+                    .body(new AuthResponseDTO(null, null, null, null, null, e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Unerwarteter Fehler während der Registrierung: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AuthResponseDTO(null, null, null, null, null, "Ein unerwarteter Serverfehler ist aufgetreten."));
         }
     }
 
-    // POST: Login user with valid credentials
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<AuthResponseDTO> loginUser(@RequestParam String email, @RequestParam String password) {
         boolean success = userService.loginUser(email, password);
         if (success) {
-            return ResponseEntity.ok("Login successful!");
+            User loggedInUser = userRepository.findByEmail(email)
+                                            .orElseThrow(() -> new NoSuchElementException("Benutzer nicht gefunden nach erfolgreichem Login: " + email));
+            return ResponseEntity.ok(new AuthResponseDTO(
+                loggedInUser.getId(),
+                loggedInUser.getEmail(),
+                loggedInUser.getFirstName(),
+                loggedInUser.getLastName(),
+                loggedInUser.getRole(),
+                "Login erfolgreich!"
+            ));
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponseDTO(null, null, null, null, null, "Ungültige Anmeldedaten."));
         }
     }
 
-    // PUT: Update user profile information
     @PutMapping("/profile")
     public ResponseEntity<User> updateProfile(@RequestParam String email, @RequestBody User updatedInfo) {
         Optional<User> optionalUser = userRepository.findByEmail(email);
@@ -102,7 +121,6 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    // PUT: Update user role (e.g., to ADMIN or USER)
     @PutMapping("/role")
     public ResponseEntity<?> updateRole(@RequestParam Long id, @RequestParam String role) {
         Optional<User> optionalUser = userRepository.findById(id);
@@ -117,7 +135,6 @@ public class UserController {
         return ResponseEntity.ok("User role updated to: " + role);
     }
 
-    // POST: Add user to a team
     @PostMapping("/teams/add")
     public ResponseEntity<?> addUserToTeam(@RequestParam Long userId, @RequestParam Long teamId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -133,11 +150,11 @@ public class UserController {
         team.getMembers().add(user);
 
         userRepository.save(user);
+        teamRepository.save(team);
 
         return ResponseEntity.ok("User added to team.");
     }
 
-    // DELETE: Remove user from a team
     @DeleteMapping("/teams/delete")
     public ResponseEntity<?> removeUserFromTeam(@RequestParam Long userId, @RequestParam Long teamId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -153,6 +170,7 @@ public class UserController {
         team.getMembers().remove(user);
 
         userRepository.save(user);
+        teamRepository.save(team);
 
         return ResponseEntity.ok("User removed from team.");
     }

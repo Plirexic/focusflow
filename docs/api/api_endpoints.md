@@ -5,6 +5,9 @@ Version: 0.1
 Base URL: `/api`
 
 ---
+## Easy Access with Swagger UI
+
+After starting the backend the full Swagger API Documentation can be found here: http://localhost:8080/swagger-ui.html
 
 ## 🧑‍💼 User Endpoints (`/api/user`)
 

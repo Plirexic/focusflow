@@ -1,5 +1,3 @@
-// src/services/teamService.ts
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 export interface TeamCreationData {
@@ -30,7 +28,15 @@ export interface Team {
   creator?: UserSummary;
 }
 
-/** Hilfsfunktion für Response-Handling */
+export interface UserInTeam {
+  id: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+
+
 async function handleResponse<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => null);
   if (!res.ok) {
@@ -42,13 +48,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-/** Alle Teams holen */
 export async function getAllTeams(): Promise<Team[]> {
   const res = await fetch(`${API_BASE_URL}/api/teams/all`);
   return handleResponse<Team[]>(res);
 }
 
-/** Ein Team nach ID holen */
 export async function getTeamById(teamId: number): Promise<Team> {
   const res = await fetch(`${API_BASE_URL}/api/teams?id=${teamId}`);
   if (res.status === 404) {
@@ -57,16 +61,13 @@ export async function getTeamById(teamId: number): Promise<Team> {
   return handleResponse<Team>(res);
 }
 
-/** Teams für einen bestimmten User holen */
 export async function getTeamsForUser(userId: number): Promise<Team[]> {
   const res = await fetch(`${API_BASE_URL}/api/teams/user?userId=${userId}`);
   return handleResponse<Team[]>(res);
 }
 
-/** Neues Team erstellen */
 export async function createTeam(teamData: TeamCreationData): Promise<CreateTeamResponse> {
   const url = `${API_BASE_URL}/api/teams/create`;
-  console.log('📡 createTeam POST to', url, '– payload:', teamData);
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -75,9 +76,6 @@ export async function createTeam(teamData: TeamCreationData): Promise<CreateTeam
   return handleResponse<CreateTeamResponse>(res);
 }
 
-/**
- * Fügt einem Team per POST /api/teams/{teamId}/members neue Mitglieder hinzu.
- */
 export async function addMembersToTeam(
   teamId: number,
   memberEmails: string[]
@@ -103,9 +101,6 @@ export async function deleteTeam(teamId: number): Promise<void> {
   }
 }
 
-/**
- * Updated ein bestehendes Team (Name & Beschreibung).
- */
 export async function updateTeam(
   teamId: number,
   data: { name: string; description?: string }

@@ -117,14 +117,7 @@ public class UserRegistrationSteps {
     @Then("I should see the registration success message {string}") 
     public void i_should_see_registration_success_message(String expectedMessage) throws Exception {
         int statusCode = this.result.getResponse().getStatus();
-        assertEquals(302, statusCode, "Expected HTTP status 302 for successful registration redirect.");
-    }
-
-    @And("I should be redirected to the login page")
-    public void i_should_be_redirected_to_login() throws Exception {
-        assertEquals(302, this.result.getResponse().getStatus());
-        String locationHeader = this.result.getResponse().getHeader("Location");
-        assertEquals("/login", locationHeader, "Expected redirect to /login");
+        assertEquals(200, statusCode, "Expected HTTP status 200 for successful registration.");
     }
 
     @Then("I should see the user registration error message {string}") 
@@ -139,6 +132,6 @@ public class UserRegistrationSteps {
     @Then("I should remain on the user registration page") 
     public void i_should_remain_on_the_user_registration_page() {
         int statusCode = this.result.getResponse().getStatus();
-        assertTrue(statusCode != 302, "Should not redirect on registration error.");
+        assertTrue(statusCode != 200, "Should not see success message on registration error.");
     }
 }

@@ -20,9 +20,11 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
+    @JsonIgnore
     @Transient
     private String passwordConfirm;
 
@@ -36,10 +38,10 @@ public class User {
     private LocalDateTime lastLogin;
 
     @ManyToMany(mappedBy = "members")
-    @JsonIgnore  // verhindert Rückserialisierung von Team → User → Team
+    @JsonIgnore
     private Set<Team> teams = new HashSet<>();
 
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
-    @JsonIgnore  // verhindert Rückserialisierung von Task → User → Task
+    @JsonIgnore
     private Set<Task> tasks = new HashSet<>();
 }

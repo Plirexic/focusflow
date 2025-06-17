@@ -12,7 +12,6 @@ Scenario: Register with valid credentials
     And I confirm the password "StrongP@ss1!"
     And I click the "Register" registration button
     Then I should see the registration success message "Registration successful!"
-    And I should be redirected to the login page
 
 Scenario: Password missing uppercase letter
     Given I am on the registration page

@@ -2,25 +2,16 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-export enum TaskPriority {
-  LOW = "LOW",
-  MEDIUM = "MEDIUM",
-  HIGH = "HIGH",
-}
-
-export enum TaskStatus {
-  OPEN = "OPEN",
-  PENDING = "PENDING",
-  IN_REVIEW = "IN_REVIEW",
-  CLOSED = "CLOSED",
-}
+// KORREKTUR: 'export' hinzugefügt, um den Build-Fehler zu beheben.
+export enum TaskPriority { LOW = "LOW", MEDIUM = "MEDIUM", HIGH = "HIGH" }
+export enum TaskStatus { OPEN = "OPEN", PENDING = "PENDING", IN_REVIEW = "IN_REVIEW", CLOSED = "CLOSED" }
 
 export interface TaskCreationData {
   title: string;
   description?: string;
   longDescription?: string;
   dueDate?: string;
-  assigneeId?: number;
+  assigneeEmail?: string;
   teamId?: number;
   creatorId: number;
   priority?: TaskPriority;
@@ -33,7 +24,7 @@ export interface TaskUpdateData {
   description?: string;
   longDescription?: string;
   dueDate?: string;
-  assigneeId?: number;
+  assigneeEmail?: string;
   teamId?: number;
   priority?: TaskPriority;
   status?: TaskStatus;
@@ -46,25 +37,22 @@ export interface CreateTaskResponse {
   error?: string;
 }
 
+// KORREKTUR: Das Task-Interface ist flach, genau wie deine API-Antwort.
+// Die verschachtelten Objekte sind optional, falls die API sie doch mal liefert.
 export interface Task {
   id: number;
   title: string;
   description?: string;
   longDescription?: string;
   dueDate?: string;
-  creationDate?: string;
-  lastModifiedDate?: string;
   priority?: TaskPriority;
   status?: TaskStatus;
-  creator?: { id: number; email: string };
-  assignee?: { id: number; email: string };
-  team?: { id: number; name: string };
+  creator?: { id: number; email: string; }; // Optional
+  assignee?: { id: number; email: string; }; // Optional
+  team?: { id: number; name: string }; // Optional
 }
 
-async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
@@ -78,52 +66,25 @@ async function apiFetch<T>(
   return data as T;
 }
 
-export function createTask(
-  taskData: TaskCreationData
-): Promise<CreateTaskResponse> {
+export function createTask(taskData: TaskCreationData): Promise<CreateTaskResponse> {
   return apiFetch<CreateTaskResponse>(`/api/tasks`, {
     method: 'POST',
     body: JSON.stringify(taskData),
   });
 }
 
-export function getAllTasks(): Promise<Task[]> {
-  return apiFetch<Task[]>(`/api/tasks/all`, {
-    // Cache ausschalten, damit wir immer frische Daten bekommen
-    cache: 'no-cache',
-  });
-}
-
-export function updateTask(
-  taskId: number,
-  data: TaskUpdateData
-): Promise<void> {
-  // bleibt void, wir machen das UI-Merge im Frontend
+export function updateTask(taskId: number, data: TaskUpdateData): Promise<void> {
   return apiFetch<void>(`/api/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 }
 
-export function getTaskById(
-  taskId: number
-): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${taskId}`);
-}
-
-export function getTasksForUser(
-  userId: number
-): Promise<Task[]> {
+// DIES IST JETZT UNSERE EINZIGE FUNKTION ZUM HOLEN VON AUFGABENLISTEN
+export function getTasksForUser(userId: number): Promise<Task[]> {
   return apiFetch<Task[]>(`/api/tasks/user?userId=${userId}`);
 }
 
-export function getAssignedTasks(
-  userId: number
-): Promise<Task[]> {
-  return apiFetch<Task[]>(`/api/tasks?assigneeId=${userId}`);
-}
-
-/** Löscht einen Task per ID */
 export function deleteTask(taskId: number): Promise<void> {
   return apiFetch<void>(`/api/tasks/${taskId}`, {
     method: 'DELETE'

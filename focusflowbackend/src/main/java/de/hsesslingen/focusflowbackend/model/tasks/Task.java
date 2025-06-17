@@ -18,6 +18,11 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id", nullable = false)
+    @JsonBackReference("user-created-tasks")
+    private User creator;
+
     @Column(nullable = false)
     private String title;
 
@@ -34,7 +39,6 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
-    
     // Owning side of Task → User (Assignee)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
