@@ -1,6 +1,5 @@
 // src/services/taskService.ts
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import { apiFetch } from './api';
 
 // KORREKTUR: 'export' hinzugefügt, um den Build-Fehler zu beheben.
 export enum TaskPriority { LOW = "LOW", MEDIUM = "MEDIUM", HIGH = "HIGH" }
@@ -50,20 +49,6 @@ export interface Task {
   creator?: { id: number; email: string; }; // Optional
   assignee?: { id: number; email: string; }; // Optional
   team?: { id: number; name: string }; // Optional
-}
-
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) {
-    const msg = (data && (data.error || data.message)) || res.statusText;
-    throw new Error(`HTTP-Fehler ${res.status}: ${msg}`);
-  }
-  return data as T;
 }
 
 export function createTask(taskData: TaskCreationData): Promise<CreateTaskResponse> {

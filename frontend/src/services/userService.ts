@@ -1,6 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 import { AuthResponse, UserProfile } from './authService';
+import { apiFetch } from './api';
 
 export interface UserRegistrationData {
     email: string;
@@ -35,47 +36,15 @@ export async function registerUser(userData: UserRegistrationData): Promise<Auth
 }
 
 export async function getUserById(userId: number): Promise<UserProfile> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/user?id=${userId}`, {
-            method: 'GET',
-            headers: {
-            },
-        });
-        if (!response.ok) {
-            if (response.status === 404) throw new Error(`Benutzer mit ID ${userId} nicht gefunden.`);
-            const errorText = await response.text();
-            throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorText}`);
-        }
-        return await response.json() as UserProfile;
-    } catch (error) {
-        throw error;
-    }
+    return apiFetch<UserProfile>(`/api/user?id=${userId}`);
 }
 
 export async function updateUserProfile(email: string, updatedInfo: Partial<UserProfile>): Promise<UserProfile> {
-    try {
-        const { id, ...dataToSend } = updatedInfo;
-
-        const response = await fetch(`${API_BASE_URL}/api/user/profile?email=${encodeURIComponent(email)}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dataToSend),
-        });
-        if (!response.ok) {
-            try {
-                const errorBody = await response.json();
-                throw new Error(errorBody.message || `HTTP-Fehler! Status: ${response.status}`);
-            } catch (jsonError) {
-                const errorText = await response.text();
-                throw new Error(errorText || `HTTP-Fehler! Status: ${response.status}`);
-            }
-        }
-        return await response.json() as UserProfile;
-    } catch (error) {
-        throw error;
-    }
+    const { id, ...dataToSend } = updatedInfo;
+    return apiFetch<UserProfile>(`/api/user/profile?email=${encodeURIComponent(email)}`, {
+        method: 'PUT',
+        body: JSON.stringify(dataToSend),
+    });
 }
 
 export async function addUserToTeam(userId: number, teamId: number): Promise<{ success: boolean; message: string }> {

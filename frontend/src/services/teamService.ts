@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import { apiFetch, API_BASE_URL } from './api';
 
 export interface TeamCreationData {
   name: string;
@@ -38,7 +38,12 @@ export interface UserInTeam {
 
 
 async function handleResponse<T>(res: Response): Promise<T> {
-  const body = await res.json().catch(() => null);
+  // Fallback for any legacy direct fetch usage
+  const text = await res.text();
+  let body: any = null;
+  if (text) {
+    try { body = JSON.parse(text); } catch { body = text; }
+  }
   if (!res.ok) {
     const msg = typeof body === 'string'
       ? body
@@ -49,70 +54,46 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function getAllTeams(): Promise<Team[]> {
-  const res = await fetch(`${API_BASE_URL}/api/teams/all`);
-  return handleResponse<Team[]>(res);
+  return apiFetch<Team[]>(`/api/teams/all`);
 }
 
 export async function getTeamById(teamId: number): Promise<Team> {
-  const res = await fetch(`${API_BASE_URL}/api/teams?id=${teamId}`);
-  if (res.status === 404) {
-    throw new Error(`Team mit ID ${teamId} nicht gefunden.`);
-  }
-  return handleResponse<Team>(res);
+  return apiFetch<Team>(`/api/teams?id=${teamId}`);
 }
 
 export async function getTeamsForUser(userId: number): Promise<Team[]> {
-  const res = await fetch(`${API_BASE_URL}/api/teams/user?userId=${userId}`);
-  return handleResponse<Team[]>(res);
+  return apiFetch<Team[]>(`/api/teams/user?userId=${userId}`);
 }
 
 export async function createTeam(teamData: TeamCreationData): Promise<CreateTeamResponse> {
-  const url = `${API_BASE_URL}/api/teams/create`;
-  const res = await fetch(url, {
+  return apiFetch<CreateTeamResponse>(`/api/teams/create`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(teamData),
   });
-  return handleResponse<CreateTeamResponse>(res);
 }
 
 export async function addMembersToTeam(
   teamId: number,
   memberEmails: string[]
 ): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/members`, {
+  await apiFetch<void>(`/api/teams/${teamId}/members`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ memberEmails })
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || `HTTP-Fehler ${res.status}`);
-  }
 }
 
 export async function deleteTeam(teamId: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}`, {
+  await apiFetch<void>(`/api/teams/${teamId}`, {
     method: 'DELETE'
   });
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || `HTTP-Fehler ${res.status}`);
-  }
 }
 
 export async function updateTeam(
   teamId: number,
   data: { name: string; description?: string }
 ): Promise<Team> {
-  const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}`, {
+  return apiFetch<Team>(`/api/teams/${teamId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || `HTTP-Fehler ${res.status}`);
-  }
-  return res.json() as Promise<Team>;
 }
